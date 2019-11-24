@@ -7,6 +7,6 @@ module.exports = {
 
   rules: {
     'img-alt-attributes': false,
-    'html-comments': false,
+    'no-html-comments': false,
   },
 };
