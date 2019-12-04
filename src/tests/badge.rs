@@ -23,6 +23,8 @@ struct BadgeRef {
     circle_ci_attributes: HashMap<String, String>,
     cirrus_ci: Badge,
     cirrus_ci_attributes: HashMap<String, String>,
+    github_actions: Badge,
+    github_actions_attributes: HashMap<String, String>,
     maintenance: Badge,
     maintenance_attributes: HashMap<String, String>,
 }
@@ -144,6 +146,20 @@ fn set_up() -> (BadgeTestCrate, BadgeRef) {
     badge_attributes_cirrus_ci.insert(String::from("branch"), String::from("beta"));
     badge_attributes_cirrus_ci.insert(String::from("repository"), String::from("rust-lang/rust"));
 
+    let github_actions = Badge::GitHubActions {
+        repository: String::from("rust-lang/rust"),
+        branch: Some(String::from("beta")),
+        workflow_name: Some(String::from("Test")),
+        workflow_file_path: Some(String::from(".github/workflows/test.yml")),
+        event: Some(String::from("pull_request")),
+    };
+    let mut badge_attributes_github_actions = HashMap::new();
+    badge_attributes_github_actions.insert(String::from("repository"), String::from("rust-lang/rust"));
+    badge_attributes_github_actions.insert(String::from("branch"), String::from("beta"));
+    badge_attributes_github_actions.insert(String::from("workflow_name"), String::from("Test"));
+    badge_attributes_github_actions.insert(String::from("workflow_file_path"), String::from(".github/workflows/test.yml"));
+    badge_attributes_github_actions.insert(String::from("event"), String::from("pull_request"));
+
     let maintenance = Badge::Maintenance {
         status: MaintenanceStatus::LookingForMaintainer,
     };
@@ -175,6 +191,8 @@ fn set_up() -> (BadgeTestCrate, BadgeRef) {
         circle_ci_attributes: badge_attributes_circle_ci,
         cirrus_ci,
         cirrus_ci_attributes: badge_attributes_cirrus_ci,
+        github_actions,
+        github_actions_attributes: badge_attributes_github_actions,
         maintenance,
         maintenance_attributes,
     };
@@ -311,6 +329,17 @@ fn update_add_cirrus_ci() {
     badges.insert(String::from("cirrus-ci"), test_badges.cirrus_ci_attributes);
     krate.update(&badges);
     assert_eq!(krate.badges(), vec![test_badges.cirrus_ci]);
+}
+
+#[test]
+fn update_add_github_actions() {
+    // Add a GitHub Actions badge
+    let (krate, test_badges) = set_up();
+
+    let mut badges = HashMap::new();
+    badges.insert(String::from("github-actions"), test_badges.github_actions_attributes);
+    krate.update(&badges);
+    assert_eq!(krate.badges(), vec![test_badges.github_actions]);
 }
 
 #[test]
@@ -584,6 +613,23 @@ fn cirrus_ci_required_keys() {
     let invalid_badges = krate.update(&badges);
     assert_eq!(invalid_badges.len(), 1);
     assert_eq!(invalid_badges.first().unwrap(), "cirrus-ci");
+    assert_eq!(krate.badges(), vec![]);
+}
+
+#[test]
+fn github_actions_required_keys() {
+    // Add a GitHub Actions badge missing a required field
+    let (krate, mut test_badges) = set_up();
+
+    let mut badges = HashMap::new();
+
+    // Repository is a required key
+    test_badges.github_actions_attributes.remove("repository");
+    badges.insert(String::from("github-actions"), test_badges.github_actions_attributes);
+
+    let invalid_badges = krate.update(&badges);
+    assert_eq!(invalid_badges.len(), 1);
+    assert_eq!(invalid_badges.first().unwrap(), "github-actions");
     assert_eq!(krate.badges(), vec![]);
 }
 

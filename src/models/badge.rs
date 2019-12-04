@@ -68,6 +68,14 @@ pub enum Badge {
         branch: Option<String>,
         service: Option<String>,
     },
+    #[serde(rename = "github-actions")]
+    GitHubActions {
+        repository: String,
+        branch: Option<String>,
+        workflow_name: Option<String>,
+        workflow_file_path: Option<String>,
+        event: Option<String>,
+    },
     Maintenance {
         status: MaintenanceStatus,
     },
